@@ -55,7 +55,14 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
     console.log('Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment');
     process.exit(1);
 }
+/**
+Connect API.AI to our bot
+*/
 
+var apiai = require('botkit-middleware-apiai')({
+   token: process.env.APIAI_TOKEN
+});
+controller.middleware.receive.use(apiai.receive);
 
 /**
  * A demonstration for how to handle websocket events. In this case, just log when we have and have not
@@ -85,10 +92,23 @@ controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, "I'm here!")
 });
 
-controller.hears('hello', 'direct_message', function (bot, message) {
-    bot.reply(message, 'Hello!');
+controller.hears('hello', ['message', 'direct_message', 'direct_mention'], apiai.hears, function (
+bot, message) {
+   bot.reply(message, 'Good Morrow, fine Sir or Madame!');
 });
 
+controller.hears('Howareyou', ['message', 'direct_message', 'direct_mention'], apiai.hears, function (
+bot, message) {
+   bot.reply(message, 'For the conequest of the empire, I have never been more alive');
+});
+
+controller.hears(['boat'], ['message', 'direct_message', 'direct_mention'], apiai.hears, function (bot, message) {
+   if(message.fulfillment.speech !== '') {
+       bot.reply(message, message.fulfillment.speech);
+   } else {
+       bot.reply(message, "You requested to sail to " + message.entities['geo-city'] + " on the year " + message.entities['date']+".");
+   }
+});
 
 /**
  * AN example of what could be:
